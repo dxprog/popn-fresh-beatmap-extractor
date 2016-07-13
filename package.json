@@ -1,0 +1,14 @@
+{
+  "name": "popn-fresh",
+  "version": "1.0.0",
+  "description": "A pop'n music video to beatmap analyzer",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matt Hackmann",
+  "license": "WTFPL",
+  "dependencies": {
+    "canvas": "^1.4.0"
+  }
+}
