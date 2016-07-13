@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Shitty analyzer</title>
+    <script src="//code.jquery.com/jquery.min.js"></script>
+  </head>
+  <body>
+    <canvas width="456" height="375" id="board"></canvas>
+    <script>
+
+      var canvas = document.getElementById('board');
+      var ctx = canvas.getContext('2d');
+      var colors = [ 'gray', 'yellow', 'green', 'blue', 'red', 'blue', 'green', 'yellow', 'gray' ];
+      var frames;
+      var width = canvas.width / 9;
+      var currentFrame = 0;
+      var totalFrames = 0;
+      var timer;
+
+      function displayFrame() {
+        var frame = frames[currentFrame];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        var j = 0;
+        for (var i = 0; i < 9; i++) {
+          ctx.fillStyle = colors[i];
+          if (frame[i] instanceof Array) {
+            for (j = 0; j < frame[i].length; j++) {
+              ctx.fillRect(i * width + (width / 2), frame[i][j] - 4, width / 2, 8);
+            }
+          }
+        }
+        currentFrame++;
+        if (currentFrame > totalFrames) {
+          clearInterval(timer);
+        }
+      }
+
+      $.getJSON('./choco-smile.json').then(function(data) {
+        frames = data;
+        totalFrames = frames.length;
+        timer = setInterval(displayFrame, 1000 / 30);
+      });
+    </script>
+  </body>
+</html>
