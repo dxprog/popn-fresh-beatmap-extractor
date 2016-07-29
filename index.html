@@ -35,7 +35,7 @@
         }
       }
 
-      $.getJSON('./choco-smile.json').then(function(data) {
+      $.getJSON('./choco_smile.json').then(function(data) {
         frames = data;
         totalFrames = frames.length;
         timer = setInterval(displayFrame, 1000 / 30);

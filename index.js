@@ -11,6 +11,8 @@ const FRAMES_PATH = path.resolve('/home/matt/choco_smile');
 const THRESHOLD = 200;
 const START = 335;
 const END = 4026;
+const SPEED_MULTIPLIER = 3.5;
+const TRAVEL_DISTANCE = 484;
 
 const COLS = [
   25,
@@ -33,7 +35,7 @@ function getPixel(x, y, data) {
   };
 }
 
-function extractBeatsFromFrame(frame) {
+function extractBeatsFromImage(frame) {
   return new Promise((resolve, reject) => {
     frame = frame < 1000 ? '0' + frame : frame;
     fs.readFile(path.resolve(FRAMES_PATH, `${frame}.png`), (err, data) => {
@@ -74,44 +76,87 @@ function extractBeatsFromFrame(frame) {
   });
 }
 
-function analyzeColumn(col, data) {
-  var index, pixel, distance;
-  var lastPixel;
-  for (var y = 0; y < BOARD_HEIGHT; y++) {
-    index = ((y * BOARD_WIDTH) + col) * 4;
-
-    if (pixel.r > 200 && pixel.g > 200 && pixel.b > 200) {
-      console.log(y);
-    }
-    lastPixel = pixel;
-  }
-}
-
-function readBeatmap() {
+function readFrames() {
   return new Promise((resolve, reject) => {
-    const beatmap = [];
+    const frames = [];
     function readFrame(frame) {
       return new Promise((resolve, reject) => {
         if (frame > END) {
           resolve();
         } else {
-          console.log(`Reading frame ${frame}`);
-          extractBeatsFromFrame(frame).then((beats) => {
-            beatmap.push(beats);
+          console.error(`Reading frame ${frame}`);
+          extractBeatsFromImage(frame).then((beats) => {
+            frames.push(beats);
             return readFrame(++frame).then(resolve);
           }, (err) => {
-            console.log(err);
+            console.error(err);
           });
         }
       });
     }
 
     readFrame(START).then(() => {
-      resolve(beatmap);
+      resolve(frames);
     });
   });
 }
 
-readBeatmap().then((beatmap) => {
-  console.log(beatmap);
+function extractBeat(frames, frame, col) {
+  var beatFrames = [ frames[frame++][col].shift() ];
+  var position;
+  for (var i = frame, count = frames.length; i < count; i++) {
+    if (frames[i][col] && frames[i][col].length) {
+      position = frames[i][col][0];
+      if (position > beatFrames[beatFrames.length - 1]) {
+        beatFrames.push(frames[i][col].shift());
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Something only on screen for a frame is probably messed up
+  var retVal = null;
+  if (beatFrames.length > 1) {
+    var total = 0;
+    beatFrames.forEach((y, index) => {
+      total += index > 0 ? y - beatFrames[index - 1] : 0;
+    });
+    var speed = total / beatFrames.length;
+    retVal = {
+      speed: speed,
+      time: frame / 30 + (TRAVEL_DISTANCE - beatFrames[0]) / speed,
+      col: col
+    };
+  }
+
+  return retVal;
+}
+
+function framesToBeatmap(frames) {
+  var beats = [];
+  var frame, j, beat;
+  for (var i = 0, count = frames.length; i < count; i++) {
+    frame = frames[i];
+    if (frame) {
+      for (j = 0; j < 9; j++) {
+        if (frame[j]) {
+          while (frame[j].length) {
+            beat = extractBeat(frames, i, j);
+            if (beat) {
+              beats.push(beat);
+            }
+          }
+        }
+      }
+    }
+  }
+  return beats;
+}
+
+readFrames().then((frames) => {
+  var beatmap = framesToBeatmap(frames);
+  console.log(JSON.stringify(beatmap));
+}).catch((err) => {
+  console.log(err);
 });
