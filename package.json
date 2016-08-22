@@ -9,6 +9,7 @@
   "author": "Matt Hackmann",
   "license": "WTFPL",
   "dependencies": {
-    "canvas": "^1.4.0"
+    "canvas": "^1.4.0",
+    "tmp": "0.0.28"
   }
 }

@@ -7,10 +7,7 @@ const BOARD_X = 410;
 const BOARD_Y = 60;
 const BOARD_WIDTH = 456;
 const BOARD_HEIGHT = 375;
-const FRAMES_PATH = path.resolve('/home/matt/choco_smile');
 const THRESHOLD = 200;
-const START = 335;
-const END = 4026;
 const SPEED_MULTIPLIER = 3.5;
 const TRAVEL_DISTANCE = 484;
 
@@ -26,6 +23,16 @@ const COLS = [
   431
 ];
 
+var FRAMES_PATH;
+
+function padNumber(num, len) {
+  var retVal = '' + num;
+  while (retVal.length < len) {
+    retVal = '0' + retVal;
+  }
+  return retVal;
+}
+
 function getPixel(x, y, data) {
   const index = ((y * BOARD_WIDTH) + x) * 4;
   return {
@@ -37,8 +44,9 @@ function getPixel(x, y, data) {
 
 function extractBeatsFromImage(frame) {
   return new Promise((resolve, reject) => {
+    const fileName = `${FRAMES_PATH}/popn-fresh${padNumber(frame, 4)}.png`;
     frame = frame < 1000 ? '0' + frame : frame;
-    fs.readFile(path.resolve(FRAMES_PATH, `${frame}.png`), (err, data) => {
+    fs.readFile(fileName, (err, data) => {
       if (!err) {
         const img = new Image();
         img.src = data;
@@ -70,7 +78,11 @@ function extractBeatsFromImage(frame) {
         }
         resolve(columns);
       } else {
-        reject(err);
+        if (err.errno === -2) {
+          resolve(true);
+        } else {
+          reject(err);
+        }
       }
     });
   });
@@ -81,21 +93,22 @@ function readFrames() {
     const frames = [];
     function readFrame(frame) {
       return new Promise((resolve, reject) => {
-        if (frame > END) {
-          resolve();
-        } else {
-          console.error(`Reading frame ${frame}`);
-          extractBeatsFromImage(frame).then((beats) => {
+        console.log(`Reading frame ${frame}`);
+        extractBeatsFromImage(frame).then((beats) => {
+          // If we got a boolean true back, all the frames have been read
+          if (beats === true) {
+            resolve();
+          } else {
             frames.push(beats);
             return readFrame(++frame).then(resolve);
-          }, (err) => {
-            console.error(err);
-          });
-        }
+          }
+        }, (err) => {
+          console.error(err);
+        });
       });
     }
 
-    readFrame(START).then(() => {
+    readFrame(1).then(() => {
       resolve(frames);
     });
   });
@@ -154,9 +167,13 @@ function framesToBeatmap(frames) {
   return beats;
 }
 
-/* readFrames().then((frames) => {
-  var beatmap = framesToBeatmap(frames);
-  console.log(JSON.stringify(beatmap));
-}).catch((err) => {
-  console.log(err);
-}); */
+module.exports = function(framePath) {
+  FRAMES_PATH = framePath;
+  console.log(FRAMES_PATH);
+  return readFrames().then((frames) => {
+    var beatmap = framesToBeatmap(frames);
+    return JSON.stringify(beatmap);
+  }).catch((err) => {
+    console.log(err);
+  });
+};
