@@ -7,7 +7,6 @@ module.exports = function(videoFile, time) {
     console.log(`Extracting frames to ${renderDir.name}...`);
     const duration = time.end - time.start;
     exec(`ffmpeg -i "${videoFile}" -filter:v fps=fps=30 -ss ${time.start} -t ${duration} ${renderDir.name}/popn-fresh%04d.png`, (err, stdout, stderr) => {
-      console.log(err, duration, renderDir.name);
       resolve(renderDir);
     });
   });

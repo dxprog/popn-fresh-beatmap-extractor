@@ -93,10 +93,10 @@ function readFrames() {
     const frames = [];
     function readFrame(frame) {
       return new Promise((resolve, reject) => {
-        console.log(`Reading frame ${frame}`);
         extractBeatsFromImage(frame).then((beats) => {
           // If we got a boolean true back, all the frames have been read
           if (beats === true) {
+            console.log(`Extracted ${frames.length} frames`);
             resolve();
           } else {
             frames.push(beats);
@@ -169,7 +169,6 @@ function framesToBeatmap(frames) {
 
 module.exports = function(framePath) {
   FRAMES_PATH = framePath;
-  console.log(FRAMES_PATH);
   return readFrames().then((frames) => {
     var beatmap = framesToBeatmap(frames);
     return JSON.stringify(beatmap);
